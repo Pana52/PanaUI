@@ -1,108 +1,143 @@
-import React from "react";
+import { cva, type VariantProps } from "class-variance-authority";
+import { twMerge } from "tailwind-merge";
+import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from "react";
+
+// ─── Types ───────────────────────────────────────────────────────────────────
 
 export type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
 export type ButtonSize = "sm" | "md" | "lg";
 
-export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  /** Visual style variant */
+export interface ButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, "disabled"> {
   variant?: ButtonVariant;
-  /** Size of the button */
   size?: ButtonSize;
-  /** Shows a loading spinner and disables interaction */
   loading?: boolean;
-  /** Renders as full width */
   fullWidth?: boolean;
-  /** Icon to render before the label */
-  leftIcon?: React.ReactNode;
-  /** Icon to render after the label */
-  rightIcon?: React.ReactNode;
+  disabled?: boolean;
+  leftIcon?: ReactNode;
+  rightIcon?: ReactNode;
 }
 
-const variantClasses: Record<ButtonVariant, string> = {
-  primary:
-    "bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800 focus-visible:ring-blue-500",
-  secondary:
-    "bg-neutral-100 text-neutral-900 hover:bg-neutral-200 active:bg-neutral-300 focus-visible:ring-neutral-400",
-  ghost:
-    "bg-transparent text-neutral-700 hover:bg-neutral-100 active:bg-neutral-200 focus-visible:ring-neutral-400",
-  danger: "bg-red-600 text-white hover:bg-red-700 active:bg-red-800 focus-visible:ring-red-500",
-};
+// ─── Variants ────────────────────────────────────────────────────────────────
 
-const sizeClasses: Record<ButtonSize, string> = {
-  sm: "px-3 py-1.5 text-sm gap-1.5",
-  md: "px-4 py-2 text-base gap-2",
-  lg: "px-6 py-3 text-lg gap-2.5",
-};
+const buttonVariants = cva(
+  // Base
+  [
+    "inline-flex items-center justify-center gap-2 font-medium select-none",
+    "transition-colors duration-150 cursor-pointer",
+    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2",
+    "disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none",
+    "aria-busy:opacity-75 aria-busy:cursor-not-allowed aria-busy:pointer-events-none",
+  ],
+  {
+    variants: {
+      variant: {
+        primary: [
+          "bg-blue-600 text-white",
+          "hover:bg-blue-700 active:bg-blue-800",
+          "focus-visible:ring-blue-500",
+        ],
+        secondary: [
+          "bg-gray-100 text-gray-800 border border-gray-300",
+          "hover:bg-gray-200 active:bg-gray-300",
+          "focus-visible:ring-gray-400",
+        ],
+        ghost: [
+          "bg-transparent text-gray-700",
+          "hover:bg-gray-100 active:bg-gray-200",
+          "focus-visible:ring-gray-400",
+        ],
+        danger: [
+          "bg-red-500 text-white",
+          "hover:bg-red-600 active:bg-red-700",
+          "focus-visible:ring-red-400",
+        ],
+      },
+      size: {
+        sm: "h-8 px-3 text-xs rounded",
+        md: "h-10 px-4 text-sm rounded-md",
+        lg: "h-12 px-6 text-base rounded-lg",
+      },
+      fullWidth: {
+        true: "w-full",
+        false: "",
+      },
+    },
+    defaultVariants: {
+      variant: "primary",
+      size: "md",
+      fullWidth: false,
+    },
+  }
+);
 
-export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  (
+type ButtonVariantProps = VariantProps<typeof buttonVariants>;
+
+// ─── Spinner ─────────────────────────────────────────────────────────────────
+
+function Spinner() {
+  return (
+    <svg
+      aria-hidden="true"
+      className="animate-spin"
+      width="1em"
+      height="1em"
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <circle
+        cx="12"
+        cy="12"
+        r="10"
+        stroke="currentColor"
+        strokeWidth="3"
+        strokeLinecap="round"
+        strokeDasharray="31.4"
+        strokeDashoffset="10"
+        opacity="0.25"
+      />
+      <path
+        d="M12 2a10 10 0 0 1 10 10"
+        stroke="currentColor"
+        strokeWidth="3"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+// ─── Component ───────────────────────────────────────────────────────────────
+
+export const Button = forwardRef<HTMLButtonElement, ButtonProps & ButtonVariantProps>(
+  function Button(
     {
-      variant = "primary",
-      size = "md",
+      variant,
+      size,
       loading = false,
       fullWidth = false,
+      disabled = false,
       leftIcon,
       rightIcon,
-      className = "",
-      disabled,
+      className,
       children,
       ...props
     },
     ref
-  ) => {
+  ) {
     const isDisabled = disabled || loading;
 
     return (
       <button
         ref={ref}
         disabled={isDisabled}
-        aria-busy={loading}
-        className={[
-          // Base styles
-          "inline-flex items-center justify-center rounded-md font-medium",
-          "transition-colors duration-150",
-          "focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2",
-          "disabled:opacity-50 disabled:cursor-not-allowed",
-          // Variant + size
-          variantClasses[variant],
-          sizeClasses[size],
-          // Full width
-          fullWidth ? "w-full" : "",
-          className,
-        ]
-          .filter(Boolean)
-          .join(" ")}
+        aria-busy={loading || undefined}
+        className={twMerge(buttonVariants({ variant, size, fullWidth }), className)}
         {...props}
       >
-        {loading && (
-          <svg
-            className="animate-spin h-4 w-4 shrink-0"
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            aria-hidden="true"
-          >
-            <circle
-              className="opacity-25"
-              cx="12"
-              cy="12"
-              r="10"
-              stroke="currentColor"
-              strokeWidth="4"
-            />
-            <path
-              className="opacity-75"
-              fill="currentColor"
-              d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 00-8 8h4z"
-            />
-          </svg>
-        )}
-        {!loading && leftIcon && <span className="shrink-0">{leftIcon}</span>}
-        {children && <span>{children}</span>}
-        {!loading && rightIcon && <span className="shrink-0">{rightIcon}</span>}
+        {loading ? <Spinner /> : leftIcon ? <span className="inline-flex">{leftIcon}</span> : null}
+        {children}
+        {rightIcon && !loading ? <span className="inline-flex">{rightIcon}</span> : null}
       </button>
     );
   }
 );
-
-Button.displayName = "Button";

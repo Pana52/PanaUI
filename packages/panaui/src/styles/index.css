@@ -1,6 +1,9 @@
 /* Tailwind CSS directives */
 @import "tailwindcss";
 
+/* Explicitly tell Tailwind where to scan for utility classes */
+@source "../**/*.{ts,tsx}";
+
 /* 
   Custom CSS goes here.
   You can also create separate .css files and @import them below.
