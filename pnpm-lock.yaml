@@ -301,6 +301,9 @@ importers:
         specifier: '>=18.0.0'
         version: 19.2.6(react@19.2.6)
     devDependencies:
+      '@storybook/react':
+        specifier: ^8.6.18
+        version: 8.6.18(@storybook/test@8.6.18(storybook@8.6.18(prettier@3.8.3)))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(storybook@8.6.18(prettier@3.8.3))(typescript@6.0.3)
       '@types/node':
         specifier: ^25.9.1
         version: 25.9.1

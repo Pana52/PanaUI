@@ -28,7 +28,8 @@
     "react-dom": ">=18.0.0"
   },
   "devDependencies": {
-    "@types/node": "^25.9.1"
+    "@types/node": "^25.9.1",
+    "@storybook/react": "^8.6.18"
   },
   "dependencies": {
     "@panaui/tokens": "workspace:*"
