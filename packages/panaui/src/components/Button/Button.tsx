@@ -2,7 +2,7 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { twMerge } from "tailwind-merge";
 import { forwardRef, type ButtonHTMLAttributes, type CSSProperties, type ReactNode } from "react";
 import type { GlassProfile, GlassProfileName } from "@panaui/tokens";
-import { getGlassProfile } from "@panaui/tokens";
+import { getGlassProfile, colors } from "@panaui/tokens";
 import { useTheme } from "../../contexts/ThemeContext";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -44,7 +44,31 @@ export interface ButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement
 
 // ─── Glass Profile → Inline Style ────────────────────────────────────────────
 
-function glassProfileToStyle(profile: GlassProfile, borderWidth?: string): CSSProperties {
+/**
+ * Maps button variant to semantic border color from color tokens.
+ * Returns undefined for variants that should use the glass profile's default border.
+ */
+function getSemanticBorderColor(variant?: ButtonVariant): string | undefined {
+  switch (variant) {
+    case "primary":
+      return colors.primary.glass.border;
+    case "secondary":
+      return colors.neutral.glass.border;
+    case "danger":
+      return colors.glass.danger.border;
+    case "ghost":
+      // Ghost uses generic white borders from the glass profile
+      return undefined;
+    default:
+      return undefined;
+  }
+}
+
+function glassProfileToStyle(
+  profile: GlassProfile,
+  borderWidth?: string,
+  variant?: ButtonVariant
+): CSSProperties {
   const { backdrop, surface, border, shadow, motion } = profile;
 
   const backdropFilter = [
@@ -67,11 +91,15 @@ function glassProfileToStyle(profile: GlassProfile, borderWidth?: string): CSSPr
     .filter(Boolean)
     .join(", ");
 
+  // Use semantic border color from color tokens if available, otherwise fall back to profile's border color
+  const semanticBorderColor = getSemanticBorderColor(variant);
+  const finalBorderColor = semanticBorderColor || border.color;
+
   return {
     backdropFilter,
     WebkitBackdropFilter: backdropFilter,
     background: surface.gradient || surface.fillColor,
-    borderColor: border.color,
+    borderColor: finalBorderColor,
     boxShadow,
     transitionDuration: motion.transitionDuration,
   };
@@ -342,7 +370,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps & ButtonVariantP
       glassProfile ||
       (glass ? getGlassProfile(glass, theme === "dark" ? "dark" : "light") : undefined);
     const glassStyle = resolvedProfile
-      ? glassProfileToStyle(resolvedProfile, borderWidth)
+      ? glassProfileToStyle(resolvedProfile, borderWidth, variant)
       : undefined;
 
     return (
