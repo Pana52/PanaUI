@@ -1,9 +1,9 @@
-import { Button } from "panaui";
+import { Button, ThemeProvider, useTheme } from "panaui";
 import type { ButtonVariant } from "panaui";
 import type { GlassProfileName } from "@panaui/tokens";
 
 const variants: ButtonVariant[] = ["primary", "secondary", "ghost", "danger"];
-const glassProfiles: GlassProfileName[] = ["frosted", "liquid", "dark", "tinted"];
+const glassProfiles: GlassProfileName[] = ["frosted", "liquid", "tinted", "clear"];
 
 const sectionStyle: React.CSSProperties = {
   backgroundImage: "url(/bg-image/lake_bg.jpg)",
@@ -14,7 +14,9 @@ const sectionStyle: React.CSSProperties = {
   borderRadius: "20px",
 };
 
-function App() {
+function AppContent() {
+  const { theme, toggleTheme } = useTheme();
+
   return (
     <div
       style={{
@@ -27,7 +29,39 @@ function App() {
       }}
     >
       {/* Header */}
-      <header style={{ textAlign: "center", marginBottom: "24px" }}>
+      <header style={{ textAlign: "center", marginBottom: "24px", position: "relative" }}>
+        {/* Theme Toggle */}
+        <button
+          onClick={toggleTheme}
+          style={{
+            position: "absolute",
+            top: "0",
+            right: "32px",
+            padding: "12px 24px",
+            backgroundColor: "rgba(255, 255, 255, 0.1)",
+            backdropFilter: "blur(12px)",
+            border: "1px solid rgba(255, 255, 255, 0.2)",
+            borderRadius: "12px",
+            color: "white",
+            fontSize: "16px",
+            fontWeight: "500",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            transition: "all 200ms",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = "rgba(255, 255, 255, 0.15)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = "rgba(255, 255, 255, 0.1)";
+          }}
+        >
+          <span style={{ fontSize: "20px" }}>{theme === "dark" ? "🌙" : "☀️"}</span>
+          {theme === "dark" ? "Dark" : "Light"} Mode
+        </button>
+
         <h1
           style={{
             fontSize: "48px",
@@ -46,7 +80,7 @@ function App() {
             textShadow: "0 2px 8px rgba(0,0,0,0.4)",
           }}
         >
-          Glassmorphic Button Variants
+          Glassmorphic Button Variants • Auto light/dark themes
         </p>
       </header>
 
@@ -128,6 +162,39 @@ function App() {
           </Button>
           <Button variant="primary" glass="frosted" size="lg">
             Large
+          </Button>
+        </div>
+      </section>
+
+      {/* Border Width Comparison */}
+      <section style={sectionStyle}>
+        <h2
+          style={{
+            fontSize: "32px",
+            fontWeight: "600",
+            color: "white",
+            textShadow: "0 2px 8px rgba(0,0,0,0.5)",
+            marginBottom: "20px",
+          }}
+        >
+          Border Width Variants (Primary + Frosted)
+        </h2>
+        <div
+          style={{
+            display: "flex",
+            gap: "16px",
+            alignItems: "center",
+            flexWrap: "wrap",
+          }}
+        >
+          <Button variant="primary" glass="frosted" borderWidth="1px">
+            1px Border
+          </Button>
+          <Button variant="primary" glass="frosted" borderWidth="2px">
+            2px Border
+          </Button>
+          <Button variant="primary" glass="frosted" borderWidth="3px">
+            3px Border
           </Button>
         </div>
       </section>
@@ -219,15 +286,81 @@ function App() {
                 textShadow: "0 1px 4px rgba(0,0,0,0.5)",
               }}
             >
-              Dark Glass
+              Tinted Glass
             </span>
-            <Button variant="primary" glass="dark">
+            <Button variant="primary" glass="tinted">
               Primary
             </Button>
-            <Button variant="secondary" glass="dark">
+            <Button variant="secondary" glass="tinted">
               Secondary
             </Button>
-            <Button variant="danger" glass="dark">
+            <Button variant="danger" glass="tinted">
+              Danger
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      {/* Clear vs Frosted Comparison */}
+      <section style={sectionStyle}>
+        <h2
+          style={{
+            fontSize: "32px",
+            fontWeight: "600",
+            color: "white",
+            textShadow: "0 2px 8px rgba(0,0,0,0.5)",
+            marginBottom: "20px",
+          }}
+        >
+          Clear vs Frosted Glass Comparison
+        </h2>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+            gap: "16px",
+            maxWidth: "600px",
+          }}
+        >
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+            <span
+              style={{
+                color: "white",
+                fontSize: "14px",
+                fontWeight: "500",
+                textShadow: "0 1px 4px rgba(0,0,0,0.5)",
+              }}
+            >
+              Clear Glass (Ultra Minimal)
+            </span>
+            <Button variant="primary" glass="clear">
+              Primary
+            </Button>
+            <Button variant="secondary" glass="clear">
+              Secondary
+            </Button>
+            <Button variant="danger" glass="clear">
+              Danger
+            </Button>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+            <span
+              style={{
+                color: "white",
+                fontSize: "14px",
+                fontWeight: "500",
+                textShadow: "0 1px 4px rgba(0,0,0,0.5)",
+              }}
+            >
+              Frosted Glass (Moderate)
+            </span>
+            <Button variant="primary" glass="frosted">
+              Primary
+            </Button>
+            <Button variant="secondary" glass="frosted">
+              Secondary
+            </Button>
+            <Button variant="danger" glass="frosted">
               Danger
             </Button>
           </div>
@@ -249,10 +382,18 @@ function App() {
             textShadow: "0 1px 4px rgba(0,0,0,0.5)",
           }}
         >
-          PanaUI Glass Demo • Replace /public/background.jpg with your image
+          PanaUI Glass Demo • Toggle theme to see automatic light/dark glass variants
         </p>
       </footer>
     </div>
+  );
+}
+
+function App() {
+  return (
+    <ThemeProvider>
+      <AppContent />
+    </ThemeProvider>
   );
 }
 

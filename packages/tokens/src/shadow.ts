@@ -22,4 +22,10 @@ export const shadow = {
     success: "0 0 20px rgba(34,  197, 94,  0.25)",
     warning: "0 0 20px rgba(245, 158, 11,  0.25)",
   },
+  textShadow: {
+    /** Text shadow for light mode — subtle dark shadow for contrast on light glass */
+    onGlassLight: "0 1px 2px rgba(0, 0, 0, 0.15)",
+    /** Text shadow for dark mode — stronger shadow for readability on dark glass */
+    onGlassDark: "0 1px 3px rgba(0, 0, 0, 0.40)",
+  },
 } as const;

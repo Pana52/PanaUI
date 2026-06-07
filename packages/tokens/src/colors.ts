@@ -19,6 +19,10 @@ export const colors = {
         onLight: "#1e3a8a", // primary-900 — readable on light glass tint
         onDark: "#93c5fd", // primary-300 — readable on dark glass tint
       },
+      textShadow: {
+        light: "0 1px 2px rgba(0, 0, 0, 0.15)",
+        dark: "0 1px 3px rgba(0, 0, 0, 0.40)",
+      },
     },
   },
   neutral: {
@@ -40,6 +44,10 @@ export const colors = {
       text: {
         onLight: "#1f2937", // neutral-800
         onDark: "#d1d5db", // neutral-300
+      },
+      textShadow: {
+        light: "0 1px 2px rgba(0, 0, 0, 0.15)",
+        dark: "0 1px 3px rgba(0, 0, 0, 0.40)",
       },
     },
   },
@@ -69,6 +77,10 @@ export const colors = {
         onLight: "#991b1b", // red-800
         onDark: "#fca5a5", // red-300
       },
+      textShadow: {
+        light: "0 1px 2px rgba(0, 0, 0, 0.15)",
+        dark: "0 1px 3px rgba(0, 0, 0, 0.40)",
+      },
     },
     success: {
       fill: "rgba(34, 197, 94, 0.12)",
@@ -78,6 +90,10 @@ export const colors = {
         onLight: "#15803d", // green-700
         onDark: "#86efac", // green-300
       },
+      textShadow: {
+        light: "0 1px 2px rgba(0, 0, 0, 0.15)",
+        dark: "0 1px 3px rgba(0, 0, 0, 0.40)",
+      },
     },
     warning: {
       fill: "rgba(245, 158, 11, 0.12)",
@@ -86,6 +102,10 @@ export const colors = {
       text: {
         onLight: "#92400e", // amber-800
         onDark: "#fcd34d", // amber-300
+      },
+      textShadow: {
+        light: "0 1px 2px rgba(0, 0, 0, 0.15)",
+        dark: "0 1px 3px rgba(0, 0, 0, 0.40)",
       },
     },
   },

@@ -1,6 +1,8 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { Button } from "./Button";
-import { frostedGlass, liquidGlass, darkGlass, tintedGlass } from "@panaui/tokens";
+import { frostedGlass, liquidGlass, tintedGlass, clearGlass } from "@panaui/tokens";
+import { ThemeProvider } from "../../contexts/ThemeContext";
+import { useState } from "react";
 
 // ─── Meta ─────────────────────────────────────────────────────────────────────
 
@@ -8,6 +10,13 @@ const meta: Meta<typeof Button> = {
   title: "Components/Button",
   component: Button,
   tags: ["autodocs"],
+  decorators: [
+    (Story) => (
+      <ThemeProvider>
+        <Story />
+      </ThemeProvider>
+    ),
+  ],
   argTypes: {
     variant: {
       control: "select",
@@ -15,9 +24,14 @@ const meta: Meta<typeof Button> = {
     },
     glass: {
       control: "select",
-      options: [undefined, "frosted", "liquid", "dark", "tinted"],
+      options: [undefined, "frosted", "liquid", "tinted", "clear"],
       description:
-        "Glass material profile. Composes with `variant` — variant = color identity, glass = material structure.",
+        "Glass material profile. Automatically switches between light/dark variants based on theme. Composes with `variant` — variant = color identity, glass = material structure.",
+    },
+    borderWidth: {
+      control: "select",
+      options: ["1px", "2px", "3px"],
+      description: "Border thickness for visual emphasis.",
     },
     size: {
       control: "select",
@@ -35,6 +49,7 @@ const meta: Meta<typeof Button> = {
     children: "Button",
     variant: "primary",
     size: "md",
+    borderWidth: "1px",
     loading: false,
     disabled: false,
     fullWidth: false,
@@ -222,11 +237,11 @@ export const GlassProfiles: Story = {
       <Button variant="primary" glass="liquid">
         Liquid
       </Button>
-      <Button variant="primary" glass="dark">
-        Dark
-      </Button>
       <Button variant="primary" glass="tinted">
         Tinted
+      </Button>
+      <Button variant="primary" glass="clear">
+        Clear
       </Button>
     </div>
   ),
@@ -250,7 +265,7 @@ export const GlassMatrix: Story = {
       }}
     >
       {(["primary", "secondary", "ghost", "danger"] as const).flatMap((variant) =>
-        (["frosted", "liquid", "dark", "tinted"] as const).map((g) => (
+        (["frosted", "liquid", "tinted", "clear"] as const).map((g) => (
           <Button key={`${variant}-${g}`} variant={variant} glass={g} size="sm">
             {variant} / {g}
           </Button>
@@ -286,7 +301,7 @@ export const GlassStates: Story = {
 // Demonstrates overriding a named profile's structural properties via
 // the `glassProfile` prop. The semantic color from `variant` still applies.
 const myCustomProfile = {
-  ...frostedGlass,
+  ...frostedGlass.light,
   backdrop: { blur: "24px", saturate: 3, brightness: 1.25 },
   border: {
     color: "rgba(255,255,255,0.50)",
@@ -310,14 +325,14 @@ export const GlassCustomProfile: Story = {
       <Button variant="primary" glass="frosted" glassProfile={myCustomProfile}>
         Custom override
       </Button>
-      <Button variant="secondary" glass="liquid" glassProfile={liquidGlass}>
-        liquidGlass import
+      <Button variant="secondary" glass="liquid" glassProfile={liquidGlass.light}>
+        liquidGlass.light import
       </Button>
-      <Button variant="danger" glass="dark" glassProfile={darkGlass}>
-        darkGlass import
+      <Button variant="danger" glass="tinted" glassProfile={tintedGlass.dark}>
+        tintedGlass.dark import
       </Button>
-      <Button variant="primary" glass="tinted" glassProfile={tintedGlass}>
-        tintedGlass import
+      <Button variant="primary" glass="clear" glassProfile={clearGlass.light}>
+        clearGlass.light import
       </Button>
     </div>
   ),
@@ -339,4 +354,110 @@ export const GlassSizes: Story = {
       </Button>
     </div>
   ),
+};
+
+// ─── Clear Glass (Ultra Minimal) ──────────────────────────────────────
+
+export const ClearGlass: Story = {
+  name: "Clear Glass (Ultra Minimal Profile)",
+  render: () => (
+    <div style={glassBackground}>
+      <Button variant="primary" glass="clear">
+        Primary Clear
+      </Button>
+      <Button variant="secondary" glass="clear">
+        Secondary Clear
+      </Button>
+      <Button variant="ghost" glass="clear">
+        Ghost Clear
+      </Button>
+      <Button variant="danger" glass="clear">
+        Danger Clear
+      </Button>
+    </div>
+  ),
+};
+
+// ─── Border Width Variants ─────────────────────────────────────────────
+
+export const BorderWidthVariants: Story = {
+  name: "Border Width Variants",
+  render: () => (
+    <div style={glassBackground}>
+      <Button variant="primary" glass="frosted" borderWidth="1px">
+        1px Border
+      </Button>
+      <Button variant="primary" glass="frosted" borderWidth="2px">
+        2px Border
+      </Button>
+      <Button variant="primary" glass="frosted" borderWidth="3px">
+        3px Border
+      </Button>
+      <Button variant="danger" glass="liquid" borderWidth="1px">
+        Danger 1px
+      </Button>
+      <Button variant="danger" glass="liquid" borderWidth="2px">
+        Danger 2px
+      </Button>
+      <Button variant="danger" glass="liquid" borderWidth="3px">
+        Danger 3px
+      </Button>
+    </div>
+  ),
+};
+
+// ─── Theme Comparison (Light/Dark) ─────────────────────────────────────
+
+const ThemeComparisonComponent = () => {
+  const [theme, setTheme] = useState<"light" | "dark">("light");
+
+  return (
+    <div>
+      <div style={{ marginBottom: "24px", textAlign: "center" }}>
+        <button
+          onClick={() => setTheme((prev) => (prev === "light" ? "dark" : "light"))}
+          style={{
+            padding: "12px 24px",
+            backgroundColor: "rgba(255, 255, 255, 0.1)",
+            backdropFilter: "blur(12px)",
+            border: "1px solid rgba(255, 255, 255, 0.2)",
+            borderRadius: "8px",
+            color: "white",
+            fontSize: "16px",
+            fontWeight: "500",
+            cursor: "pointer",
+          }}
+        >
+          {theme === "dark" ? "🌙" : "☀️"} Toggle Theme (Current: {theme})
+        </button>
+      </div>
+      <ThemeProvider defaultTheme={theme}>
+        <div style={glassBackground}>
+          <Button variant="primary" glass="frosted">
+            Frosted
+          </Button>
+          <Button variant="primary" glass="liquid">
+            Liquid
+          </Button>
+          <Button variant="primary" glass="tinted">
+            Tinted
+          </Button>
+          <Button variant="primary" glass="clear">
+            Clear
+          </Button>
+          <Button variant="secondary" glass="frosted">
+            Secondary
+          </Button>
+          <Button variant="danger" glass="liquid">
+            Danger
+          </Button>
+        </div>
+      </ThemeProvider>
+    </div>
+  );
+};
+
+export const ThemeComparison: Story = {
+  name: "Theme Comparison (Light/Dark Mode)",
+  render: () => <ThemeComparisonComponent />,
 };
