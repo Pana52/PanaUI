@@ -11,16 +11,20 @@
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
+      "types": "./dist/index.d.ts",
       "import": "./dist/panaui.js",
       "require": "./dist/panaui.umd.cjs"
     },
-    "./styles": "./dist/style.css"
+    "./styles": {
+      "types": "./dist/style.css.d.ts",
+      "default": "./dist/panaui.css"
+    }
   },
   "publishConfig": {
     "access": "public"
   },
   "scripts": {
-    "build": "vite build && tsc --emitDeclarationOnly --project tsconfig.json",
+    "build": "vite build && tsc --emitDeclarationOnly --project tsconfig.json && node -p \"require('fs').copyFileSync('src/style.css.d.ts', 'dist/style.css.d.ts')\"",
     "dev": "vite build --watch"
   },
   "peerDependencies": {
