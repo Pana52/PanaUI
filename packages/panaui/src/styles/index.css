@@ -4,10 +4,27 @@
 /* Explicitly tell Tailwind where to scan for utility classes */
 @source "../**/*.{ts,tsx}";
 
-/* 
-  Custom CSS goes here.
-  You can also create separate .css files and @import them below.
-  Example:
-  @import "./button.css";
-  @import "./card.css";
+/*
+  ─── Glassmorphic accessibility overrides ────────────────────────────────────
+
+  Glass components use Tailwind's built-in `forced-colors:` and
+  `motion-reduce:` variants directly on their CVA class lists, so no
+  global overrides are required here for those media queries.
+
+  If you need to globally suppress all backdrop-filter rendering (e.g. for
+  a low-power mode toggle), add a `data-reduce-glass` attribute to <html>
+  and uncomment the block below:
+
+  [data-reduce-glass] *,
+  [data-reduce-glass] *::before,
+  [data-reduce-glass] *::after {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  ─── Stacking context note ────────────────────────────────────────────────────
+
+  backdrop-filter is clipped by any ancestor with:
+    overflow: hidden | will-change: transform | filter: <any>
+  Glass components must not be placed inside such ancestors.
 */

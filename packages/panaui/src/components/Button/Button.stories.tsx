@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { Button } from "./Button";
+import { frostedGlass, liquidGlass, darkGlass, tintedGlass } from "@panaui/tokens";
 
 // ─── Meta ─────────────────────────────────────────────────────────────────────
 
@@ -12,6 +13,12 @@ const meta: Meta<typeof Button> = {
       control: "select",
       options: ["primary", "secondary", "ghost", "danger"],
     },
+    glass: {
+      control: "select",
+      options: [undefined, "frosted", "liquid", "dark", "tinted"],
+      description:
+        "Glass material profile. Composes with `variant` — variant = color identity, glass = material structure.",
+    },
     size: {
       control: "select",
       options: ["sm", "md", "lg"],
@@ -21,6 +28,7 @@ const meta: Meta<typeof Button> = {
     fullWidth: { control: "boolean" },
     leftIcon: { control: false },
     rightIcon: { control: false },
+    glassProfile: { control: false },
     children: { control: "text" },
   },
   args: {
@@ -160,6 +168,174 @@ export const FullWidth: Story = {
       <Button fullWidth>Full Width Primary</Button>
       <Button variant="secondary" fullWidth>
         Full Width Secondary
+      </Button>
+    </div>
+  ),
+};
+// ───────────────────────────────────────────────────────────────────
+// GLASS STORIES
+// ───────────────────────────────────────────────────────────────────
+// Note: glass stories render on a gradient background so the
+// backdrop-filter effect (blur + color refraction) is visible.
+
+const glassBackground = {
+  background: "linear-gradient(135deg, #1e3a8a 0%, #2563eb 40%, #7c3aed 70%, #db2777 100%)",
+  padding: "48px 32px",
+  borderRadius: "20px",
+  display: "flex",
+  gap: "12px",
+  flexWrap: "wrap" as const,
+  alignItems: "center",
+};
+
+// ─── Glass × Color Variants ───────────────────────────────────────────────
+
+export const GlassVariants: Story = {
+  name: "Glass × Color Variants (frosted)",
+  render: () => (
+    <div style={glassBackground}>
+      <Button variant="primary" glass="frosted">
+        Primary
+      </Button>
+      <Button variant="secondary" glass="frosted">
+        Secondary
+      </Button>
+      <Button variant="ghost" glass="frosted">
+        Ghost
+      </Button>
+      <Button variant="danger" glass="frosted">
+        Danger
+      </Button>
+    </div>
+  ),
+};
+
+// ─── Glass Profiles (primary) ───────────────────────────────────────────
+
+export const GlassProfiles: Story = {
+  name: "Glass Profiles (primary variant)",
+  render: () => (
+    <div style={glassBackground}>
+      <Button variant="primary" glass="frosted">
+        Frosted
+      </Button>
+      <Button variant="primary" glass="liquid">
+        Liquid
+      </Button>
+      <Button variant="primary" glass="dark">
+        Dark
+      </Button>
+      <Button variant="primary" glass="tinted">
+        Tinted
+      </Button>
+    </div>
+  ),
+};
+
+// ─── Glass × All Variants × All Profiles ──────────────────────────────
+
+export const GlassMatrix: Story = {
+  name: "Glass Matrix (all variants × all profiles)",
+  render: () => (
+    <div
+      style={{
+        background: "linear-gradient(135deg, #1e3a8a 0%, #2563eb 40%, #7c3aed 70%, #db2777 100%)",
+        padding: "40px 32px",
+        borderRadius: "20px",
+        display: "grid",
+        gridTemplateColumns: "repeat(4, auto)",
+        gap: "10px",
+        alignItems: "center",
+        justifyContent: "start",
+      }}
+    >
+      {(["primary", "secondary", "ghost", "danger"] as const).flatMap((variant) =>
+        (["frosted", "liquid", "dark", "tinted"] as const).map((g) => (
+          <Button key={`${variant}-${g}`} variant={variant} glass={g} size="sm">
+            {variant} / {g}
+          </Button>
+        ))
+      )}
+    </div>
+  ),
+};
+
+// ─── Glass States ─────────────────────────────────────────────────────
+
+export const GlassStates: Story = {
+  render: () => (
+    <div style={glassBackground}>
+      <Button variant="primary" glass="frosted" loading>
+        Saving…
+      </Button>
+      <Button variant="primary" glass="frosted" disabled>
+        Disabled
+      </Button>
+      <Button variant="danger" glass="liquid" loading>
+        Deleting…
+      </Button>
+      <Button variant="danger" glass="liquid" disabled>
+        Disabled
+      </Button>
+    </div>
+  ),
+};
+
+// ─── Glass Custom Profile ──────────────────────────────────────────────
+
+// Demonstrates overriding a named profile's structural properties via
+// the `glassProfile` prop. The semantic color from `variant` still applies.
+const myCustomProfile = {
+  ...frostedGlass,
+  backdrop: { blur: "24px", saturate: 3, brightness: 1.25 },
+  border: {
+    color: "rgba(255,255,255,0.50)",
+    width: "1px",
+    highlightColor: "rgba(255,255,255,0.80)",
+    highlightWidth: "1px",
+  },
+  shadow: {
+    outer: "0 8px 40px rgba(0,0,0,0.18)",
+    specular: "inset 0 1px 0 rgba(255,255,255,0.70)",
+  },
+};
+
+export const GlassCustomProfile: Story = {
+  name: "Glass Custom Profile (glassProfile prop)",
+  render: () => (
+    <div style={glassBackground}>
+      <Button variant="primary" glass="frosted">
+        Built-in frosted
+      </Button>
+      <Button variant="primary" glass="frosted" glassProfile={myCustomProfile}>
+        Custom override
+      </Button>
+      <Button variant="secondary" glass="liquid" glassProfile={liquidGlass}>
+        liquidGlass import
+      </Button>
+      <Button variant="danger" glass="dark" glassProfile={darkGlass}>
+        darkGlass import
+      </Button>
+      <Button variant="primary" glass="tinted" glassProfile={tintedGlass}>
+        tintedGlass import
+      </Button>
+    </div>
+  ),
+};
+
+// ─── Glass Sizes ───────────────────────────────────────────────────────
+
+export const GlassSizes: Story = {
+  render: () => (
+    <div style={{ ...glassBackground, alignItems: "center" }}>
+      <Button variant="primary" glass="liquid" size="sm">
+        Small
+      </Button>
+      <Button variant="primary" glass="liquid" size="md">
+        Medium
+      </Button>
+      <Button variant="primary" glass="liquid" size="lg">
+        Large
       </Button>
     </div>
   ),
