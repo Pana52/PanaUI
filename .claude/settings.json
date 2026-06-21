@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find / -iname \"chromium-cli*\" -maxdepth 6 2>/dev/null | head; find /c/Users/panay -iname \"playwright\" -maxdepth 6 2>/dev/null | head; npm ls -g --depth=0 2>/dev/null)",
+      "Read(//c//**)",
+      "Read(//c/Users/panay/**)"
+    ]
+  }
+}

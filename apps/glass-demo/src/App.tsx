@@ -1,9 +1,131 @@
+import { useState } from "react";
 import { Button, ThemeProvider, useTheme } from "panaui";
 import type { ButtonVariant } from "panaui";
 import type { GlassProfileName } from "@panaui/tokens";
 
 const variants: ButtonVariant[] = ["primary", "secondary", "ghost", "danger"];
 const glassProfiles: GlassProfileName[] = ["frosted", "liquid", "tinted", "clear"];
+
+const sliderRowStyle: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: "12px",
+  color: "white",
+  fontSize: "14px",
+  textShadow: "0 1px 4px rgba(0,0,0,0.5)",
+};
+
+function ShaderTuningSection() {
+  const [glass, setGlass] = useState<GlassProfileName>("liquid");
+  const [displacementScale, setDisplacementScale] = useState(100);
+  const [blurAmount, setBlurAmount] = useState(12);
+  const [saturation, setSaturation] = useState(180);
+  const [aberrationIntensity, setAberrationIntensity] = useState(2.5);
+  const [cornerRadius, setCornerRadius] = useState(24);
+
+  return (
+    <section style={sectionStyle}>
+      <h2
+        style={{
+          fontSize: "32px",
+          fontWeight: "600",
+          color: "white",
+          textShadow: "0 2px 8px rgba(0,0,0,0.5)",
+          marginBottom: "20px",
+        }}
+      >
+        Shader Tuning
+      </h2>
+      <div style={{ display: "flex", gap: "40px", flexWrap: "wrap", alignItems: "center" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "16px", minWidth: "280px" }}>
+          <div style={sliderRowStyle}>
+            <label style={{ width: 150 }}>Profile</label>
+            <select
+              value={glass}
+              onChange={(e) => setGlass(e.target.value as GlassProfileName)}
+              style={{ padding: "4px 8px" }}
+            >
+              {glassProfiles.map((g) => (
+                <option key={g} value={g}>
+                  {g}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div style={sliderRowStyle}>
+            <label style={{ width: 150 }}>Displacement Scale</label>
+            <input
+              type="range"
+              min={0}
+              max={100}
+              value={displacementScale}
+              onChange={(e) => setDisplacementScale(Number(e.target.value))}
+            />
+            <span>{displacementScale}</span>
+          </div>
+          <div style={sliderRowStyle}>
+            <label style={{ width: 150 }}>Blur Amount</label>
+            <input
+              type="range"
+              min={0}
+              max={30}
+              value={blurAmount}
+              onChange={(e) => setBlurAmount(Number(e.target.value))}
+            />
+            <span>{blurAmount}px</span>
+          </div>
+          <div style={sliderRowStyle}>
+            <label style={{ width: 150 }}>Saturation</label>
+            <input
+              type="range"
+              min={0}
+              max={300}
+              value={saturation}
+              onChange={(e) => setSaturation(Number(e.target.value))}
+            />
+            <span>{saturation}%</span>
+          </div>
+          <div style={sliderRowStyle}>
+            <label style={{ width: 150 }}>Aberration Intensity</label>
+            <input
+              type="range"
+              min={0}
+              max={5}
+              step={0.1}
+              value={aberrationIntensity}
+              onChange={(e) => setAberrationIntensity(Number(e.target.value))}
+            />
+            <span>{aberrationIntensity.toFixed(1)}</span>
+          </div>
+          <div style={sliderRowStyle}>
+            <label style={{ width: 150 }}>Corner Radius</label>
+            <input
+              type="range"
+              min={0}
+              max={48}
+              value={cornerRadius}
+              onChange={(e) => setCornerRadius(Number(e.target.value))}
+            />
+            <span>{cornerRadius}px</span>
+          </div>
+        </div>
+
+        <Button
+          variant="primary"
+          glass={glass}
+          size="lg"
+          displacementScale={displacementScale}
+          blurAmount={blurAmount}
+          saturation={saturation}
+          aberrationIntensity={aberrationIntensity}
+          cornerRadius={cornerRadius}
+        >
+          Live Preview
+        </Button>
+      </div>
+    </section>
+  );
+}
 
 const sectionStyle: React.CSSProperties = {
   backgroundImage: "url(/bg-image/lake_bg.jpg)",
@@ -83,6 +205,8 @@ function AppContent() {
           Glassmorphic Button Variants • Auto light/dark themes
         </p>
       </header>
+
+      <ShaderTuningSection />
 
       {/* Glass Profile Sections */}
       {glassProfiles.map((glass) => (

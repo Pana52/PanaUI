@@ -1,10 +1,6 @@
 // ─── Backdrop Distortion ─────────────────────────────────────────────────────
 
 export interface GlassBackdrop {
-  /** CSS length applied to blur() — e.g. "12px" */
-  blur: string;
-  /** Multiplier for saturate() — 1 = 100%, 1.8 = 180% */
-  saturate: number;
   /** Multiplier for brightness() — 1 = 100%, 1.1 = 110% */
   brightness: number;
   /** Optional hue-rotate angle — e.g. "5deg" */
@@ -76,6 +72,26 @@ export interface GlassMotion {
   reducedBlur: string;
 }
 
+// ─── Shader (liquid glass displacement pipeline) ─────────────────────────────
+// Drives the SVG feDisplacementMap / chromatic-aberration pipeline in
+// @panaui/panaui's `useLiquidGlassShader`. Carries the full adjustable prop
+// set used by that hook — and by the glass-demo live preview controls —
+// in one place: displacementScale, blurAmount, saturation,
+// aberrationIntensity, cornerRadius.
+
+export interface GlassShader {
+  /** Strength of the edge-bulge displacement, in SVG filter scale units. Reference default: 70 (liquid). */
+  displacementScale: number;
+  /** CSS blur length in px applied via backdrop-filter. */
+  blurAmount: number;
+  /** Saturation percentage applied via backdrop-filter — 100 = unchanged. */
+  saturation: number;
+  /** Chromatic aberration intensity (R/G/B channel split at edges). 0 disables aberration entirely. */
+  aberrationIntensity: number;
+  /** Corner radius in px — drives both the visual border-radius and the shape of the displacement bulge. */
+  cornerRadius: number;
+}
+
 // ─── Master Profile Interface ─────────────────────────────────────────────────
 // Implement this interface to create a fully custom glass profile.
 // Built-in profiles are color-agnostic — semantic color tinting is handled
@@ -88,158 +104,85 @@ export interface GlassProfile {
   shadow: GlassShadow;
   focus: GlassFocus;
   motion: GlassMotion;
+  shader: GlassShader;
 }
 
 // ─── Built-in Profiles ───────────────────────────────────────────────────────
+// blurAmount/saturation differ between light and dark (darker backdrops read
+// better with less blur/saturation lift), so shader is defined per variant.
 
-/** iOS-style frosted glass with light/dark mode variants. Moderate blur, adaptive tint. */
+const frostedShader = {
+  light: {
+    displacementScale: 15,
+    blurAmount: 12,
+    saturation: 180,
+    aberrationIntensity: 0.5,
+    cornerRadius: 12,
+  },
+  dark: {
+    displacementScale: 15,
+    blurAmount: 16,
+    saturation: 140,
+    aberrationIntensity: 0.5,
+    cornerRadius: 12,
+  },
+} satisfies Record<"light" | "dark", GlassShader>;
+
+const liquidShader = {
+  light: {
+    displacementScale: 100,
+    blurAmount: 0,
+    saturation: 180,
+    aberrationIntensity: 2.5,
+    cornerRadius: 24,
+  },
+  dark: {
+    displacementScale: 100,
+    blurAmount: 0,
+    saturation: 150,
+    aberrationIntensity: 2.5,
+    cornerRadius: 24,
+  },
+} satisfies Record<"light" | "dark", GlassShader>;
+
+const tintedShader = {
+  light: {
+    displacementScale: 25,
+    blurAmount: 12,
+    saturation: 160,
+    aberrationIntensity: 1,
+    cornerRadius: 12,
+  },
+  dark: {
+    displacementScale: 25,
+    blurAmount: 12,
+    saturation: 140,
+    aberrationIntensity: 1,
+    cornerRadius: 12,
+  },
+} satisfies Record<"light" | "dark", GlassShader>;
+
+const clearShader = {
+  light: {
+    displacementScale: 0,
+    blurAmount: 0,
+    saturation: 100,
+    aberrationIntensity: 0,
+    cornerRadius: 12,
+  },
+  dark: {
+    displacementScale: 0,
+    blurAmount: 0,
+    saturation: 100,
+    aberrationIntensity: 0,
+    cornerRadius: 12,
+  },
+} satisfies Record<"light" | "dark", GlassShader>;
+
+/** Lightly tinted glass with light/dark variants. Semantic color tint dominates. */
 export const frostedGlass = {
   light: {
     backdrop: {
-      blur: "12px",
-      saturate: 1.8,
-      brightness: 1.1,
-    },
-    surface: {
-      fillColor: "rgba(255, 255, 255, 0.10)",
-    },
-    border: {
-      color: "rgba(255, 255, 255, 0.40)", // Enhanced from 0.28 for better visibility
-      width: "1px",
-      highlightColor: "rgba(255, 255, 255, 0.50)",
-      highlightWidth: "1px",
-      innerColor: "rgba(255, 255, 255, 0.15)",
-      innerWidth: "1px",
-      innerGradient: "linear-gradient(180deg, rgba(255,255,255,0.2) 0%, transparent 50%)",
-    },
-    shadow: {
-      outer: "0 4px 16px rgba(0, 0, 0, 0.18)", // Enhanced from 0.12 for better depth
-      specular: "inset 0 1px 0 rgba(255, 255, 255, 0.40)",
-    },
-    focus: {
-      ringColor: "rgba(255, 255, 255, 0.80)",
-      ringWidth: "2px",
-      ringOffset: "2px",
-      ringOffsetColor: "transparent",
-    },
-    motion: {
-      transitionDuration: "200ms",
-      reducedBlur: "2px",
-    },
-  } as GlassProfile,
-  dark: {
-    backdrop: {
-      blur: "16px",
-      saturate: 1.4,
-      brightness: 0.8, // Darkens backdrop
-    },
-    surface: {
-      fillColor: "rgba(0, 0, 0, 0.30)",
-    },
-    border: {
-      color: "rgba(255, 255, 255, 0.12)", // Enhanced from 0.08 for consistency
-      width: "1px",
-      highlightColor: "rgba(255, 255, 255, 0.15)",
-      highlightWidth: "1px",
-      innerColor: "rgba(255, 255, 255, 0.08)",
-      innerWidth: "1px",
-      innerGradient: "linear-gradient(180deg, rgba(255,255,255,0.12) 0%, transparent 50%)",
-    },
-    shadow: {
-      outer: "0 4px 24px rgba(0, 0, 0, 0.30)",
-      specular: "inset 0 1px 0 rgba(255, 255, 255, 0.15)",
-    },
-    focus: {
-      ringColor: "rgba(255, 255, 255, 0.80)",
-      ringWidth: "2px",
-      ringOffset: "2px",
-      ringOffsetColor: "transparent",
-    },
-    motion: {
-      transitionDuration: "200ms",
-      reducedBlur: "2px",
-    },
-  } as GlassProfile,
-};
-
-/** Apple Liquid Glass-inspired with light/dark variants. High blur, shimmer gradient, near-transparent fill. */
-export const liquidGlass = {
-  light: {
-    backdrop: {
-      blur: "20px", // Strongest blur
-      saturate: 2.2,
-      brightness: 1.15,
-    },
-    surface: {
-      fillColor: "rgba(255, 255, 255, 0.05)",
-      gradient: "linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.03) 100%)",
-    },
-    border: {
-      color: "rgba(255, 255, 255, 0.50)", // Enhanced from 0.35 for better visibility
-      width: "1px",
-      highlightColor: "rgba(255, 255, 255, 0.60)",
-      highlightWidth: "1px",
-      innerColor: "rgba(255, 255, 255, 0.18)",
-      innerWidth: "1px",
-      innerGradient: "linear-gradient(180deg, rgba(255,255,255,0.25) 0%, transparent 50%)",
-    },
-    shadow: {
-      outer: "0 8px 32px rgba(0, 0, 0, 0.16), 0 2px 8px rgba(0, 0, 0, 0.08)",
-      specular: "inset 0 1px 0 rgba(255, 255, 255, 0.50)",
-    },
-    focus: {
-      ringColor: "rgba(255, 255, 255, 0.90)",
-      ringWidth: "2px",
-      ringOffset: "2px",
-      ringOffsetColor: "transparent",
-    },
-    motion: {
-      transitionDuration: "300ms",
-      reducedBlur: "2px",
-    },
-  } as GlassProfile,
-  dark: {
-    backdrop: {
-      blur: "20px", // Maintains strongest blur
-      saturate: 1.8,
-      brightness: 0.85,
-    },
-    surface: {
-      fillColor: "rgba(0, 0, 0, 0.25)",
-      gradient: "linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 100%)",
-    },
-    border: {
-      color: "rgba(255, 255, 255, 0.18)",
-      width: "1px",
-      highlightColor: "rgba(255, 255, 255, 0.25)",
-      highlightWidth: "1px",
-      innerColor: "rgba(255, 255, 255, 0.10)",
-      innerWidth: "1px",
-      innerGradient: "linear-gradient(180deg, rgba(255,255,255,0.15) 0%, transparent 50%)",
-    },
-    shadow: {
-      outer: "0 8px 32px rgba(0, 0, 0, 0.40), 0 2px 8px rgba(0, 0, 0, 0.16)",
-      specular: "inset 0 1px 0 rgba(255, 255, 255, 0.20)",
-    },
-    focus: {
-      ringColor: "rgba(255, 255, 255, 0.90)",
-      ringWidth: "2px",
-      ringOffset: "2px",
-      ringOffsetColor: "transparent",
-    },
-    motion: {
-      transitionDuration: "300ms",
-      reducedBlur: "2px",
-    },
-  } as GlassProfile,
-};
-
-/** Lightly tinted glass with light/dark variants. Semantic color tint dominates. */
-export const tintedGlass = {
-  light: {
-    backdrop: {
-      blur: "12px", // Enhanced from 10px for better visibility
-      saturate: 1.6,
       brightness: 1.05,
     },
     surface: {
@@ -268,11 +211,10 @@ export const tintedGlass = {
       transitionDuration: "150ms",
       reducedBlur: "2px",
     },
+    shader: tintedShader.light,
   } as GlassProfile,
   dark: {
     backdrop: {
-      blur: "12px",
-      saturate: 1.4,
       brightness: 0.9,
     },
     surface: {
@@ -301,19 +243,154 @@ export const tintedGlass = {
       transitionDuration: "150ms",
       reducedBlur: "2px",
     },
+    shader: tintedShader.dark,
   } as GlassProfile,
 };
 
-/** Ultra-minimal clear glass with light/dark variants. Barely-there for subtle UI layers. */
+/** Apple Liquid Glass-inspired with light/dark variants. Strong edge-bulge refraction, near-clear fill. */
+export const liquidGlass = {
+  light: {
+    backdrop: {
+      brightness: 1,
+    },
+    surface: {
+      fillColor: "rgba(255, 255, 255, 0)",
+    },
+    border: {
+      color: "rgba(255, 255, 255, 0.50)", // Enhanced from 0.35 for better visibility
+      width: "1px",
+      highlightColor: "rgba(255, 255, 255, 0.60)",
+      highlightWidth: "1px",
+      innerColor: "rgba(255, 255, 255, 0.18)",
+      innerWidth: "1px",
+      innerGradient: "linear-gradient(180deg, rgba(255,255,255,0.25) 0%, transparent 50%)",
+    },
+    shadow: {
+      outer: "0 8px 32px rgba(0, 0, 0, 0.16), 0 2px 8px rgba(0, 0, 0, 0.08)",
+      specular: "inset 0 1px 0 rgba(255, 255, 255, 0.50)",
+    },
+    focus: {
+      ringColor: "rgba(255, 255, 255, 0.90)",
+      ringWidth: "2px",
+      ringOffset: "2px",
+      ringOffsetColor: "transparent",
+    },
+    motion: {
+      transitionDuration: "300ms",
+      reducedBlur: "2px",
+    },
+    shader: liquidShader.light,
+  } as GlassProfile,
+  dark: {
+    backdrop: {
+      brightness: 1,
+    },
+    surface: {
+      fillColor: "rgba(0, 0, 0, 0)",
+    },
+    border: {
+      color: "rgba(255, 255, 255, 0.18)",
+      width: "1px",
+      highlightColor: "rgba(255, 255, 255, 0.25)",
+      highlightWidth: "1px",
+      innerColor: "rgba(255, 255, 255, 0.10)",
+      innerWidth: "1px",
+      innerGradient: "linear-gradient(180deg, rgba(255,255,255,0.15) 0%, transparent 50%)",
+    },
+    shadow: {
+      outer: "0 8px 32px rgba(0, 0, 0, 0.40), 0 2px 8px rgba(0, 0, 0, 0.16)",
+      specular: "inset 0 1px 0 rgba(255, 255, 255, 0.20)",
+    },
+    focus: {
+      ringColor: "rgba(255, 255, 255, 0.90)",
+      ringWidth: "2px",
+      ringOffset: "2px",
+      ringOffsetColor: "transparent",
+    },
+    motion: {
+      transitionDuration: "300ms",
+      reducedBlur: "2px",
+    },
+    shader: liquidShader.dark,
+  } as GlassProfile,
+};
+
+/** iOS-style frosted glass with light/dark mode variants. Moderate blur, adaptive tint. */
+export const tintedGlass = {
+  light: {
+    backdrop: {
+      brightness: 1.1,
+    },
+    surface: {
+      fillColor: "rgba(255, 255, 255, 0.10)",
+    },
+    border: {
+      color: "rgba(255, 255, 255, 0.40)", // Enhanced from 0.28 for better visibility
+      width: "1px",
+      highlightColor: "rgba(255, 255, 255, 0.50)",
+      highlightWidth: "1px",
+      innerColor: "rgba(255, 255, 255, 0.15)",
+      innerWidth: "1px",
+      innerGradient: "linear-gradient(180deg, rgba(255,255,255,0.2) 0%, transparent 50%)",
+    },
+    shadow: {
+      outer: "0 4px 16px rgba(0, 0, 0, 0.18)", // Enhanced from 0.12 for better depth
+      specular: "inset 0 1px 0 rgba(255, 255, 255, 0.40)",
+    },
+    focus: {
+      ringColor: "rgba(255, 255, 255, 0.80)",
+      ringWidth: "2px",
+      ringOffset: "2px",
+      ringOffsetColor: "transparent",
+    },
+    motion: {
+      transitionDuration: "200ms",
+      reducedBlur: "2px",
+    },
+    shader: frostedShader.light,
+  } as GlassProfile,
+  dark: {
+    backdrop: {
+      brightness: 0.8, // Darkens backdrop
+    },
+    surface: {
+      fillColor: "rgba(0, 0, 0, 0.30)",
+    },
+    border: {
+      color: "rgba(255, 255, 255, 0.12)", // Enhanced from 0.08 for consistency
+      width: "1px",
+      highlightColor: "rgba(255, 255, 255, 0.15)",
+      highlightWidth: "1px",
+      innerColor: "rgba(255, 255, 255, 0.08)",
+      innerWidth: "1px",
+      innerGradient: "linear-gradient(180deg, rgba(255,255,255,0.12) 0%, transparent 50%)",
+    },
+    shadow: {
+      outer: "0 4px 24px rgba(0, 0, 0, 0.30)",
+      specular: "inset 0 1px 0 rgba(255, 255, 255, 0.15)",
+    },
+    focus: {
+      ringColor: "rgba(255, 255, 255, 0.80)",
+      ringWidth: "2px",
+      ringOffset: "2px",
+      ringOffsetColor: "transparent",
+    },
+    motion: {
+      transitionDuration: "200ms",
+      reducedBlur: "2px",
+    },
+    shader: frostedShader.dark,
+  } as GlassProfile,
+};
+
+/** Fully clear glass with light/dark variants. No fill or blur — just a faint edge so the element stays discernible. */
 export const clearGlass = {
   light: {
     backdrop: {
-      blur: "5px", // Minimal blur
-      saturate: 1.2,
-      brightness: 1.02,
+      brightness: 1,
     },
     surface: {
-      fillColor: "rgba(255, 255, 255, 0.04)", // Ultra-subtle 4% fill
+      fillColor: "rgba(255, 255, 255, 0)", // Fully transparent — no fill
     },
     border: {
       color: "rgba(255, 255, 255, 0.18)",
@@ -338,15 +415,14 @@ export const clearGlass = {
       transitionDuration: "120ms", // Fastest transition
       reducedBlur: "0px", // No blur in reduced motion
     },
+    shader: clearShader.light,
   } as GlassProfile,
   dark: {
     backdrop: {
-      blur: "5px",
-      saturate: 1.1,
-      brightness: 0.95,
+      brightness: 1,
     },
     surface: {
-      fillColor: "rgba(0, 0, 0, 0.08)",
+      fillColor: "rgba(0, 0, 0, 0)", // Fully transparent — no fill
     },
     border: {
       color: "rgba(255, 255, 255, 0.12)",
@@ -371,6 +447,7 @@ export const clearGlass = {
       transitionDuration: "120ms",
       reducedBlur: "0px", // No blur in reduced motion
     },
+    shader: clearShader.dark,
   } as GlassProfile,
 };
 

@@ -33,6 +33,29 @@ const meta: Meta<typeof Button> = {
       options: ["1px", "2px", "3px"],
       description: "Border thickness for visual emphasis.",
     },
+    displacementScale: {
+      control: { type: "range", min: 0, max: 100, step: 1 },
+      description:
+        "Liquid-glass edge displacement strength (SVG filter scale units). Overrides the glass profile's default.",
+    },
+    blurAmount: {
+      control: { type: "range", min: 0, max: 30, step: 1 },
+      description: "Backdrop blur in px. Overrides the glass profile's default.",
+    },
+    saturation: {
+      control: { type: "range", min: 0, max: 300, step: 5 },
+      description: "Backdrop saturation percentage. Overrides the glass profile's default.",
+    },
+    aberrationIntensity: {
+      control: { type: "range", min: 0, max: 5, step: 0.1 },
+      description:
+        "Chromatic aberration intensity at the glass edges. 0 disables it. Overrides the glass profile's default.",
+    },
+    cornerRadius: {
+      control: { type: "range", min: 0, max: 48, step: 1 },
+      description:
+        "Corner radius in px — shapes both the visual rounding and the displacement bulge. Overrides the glass profile's default.",
+    },
     size: {
       control: "select",
       options: ["sm", "md", "lg"],
@@ -402,6 +425,24 @@ export const BorderWidthVariants: Story = {
       <Button variant="danger" glass="liquid" borderWidth="3px">
         Danger 3px
       </Button>
+    </div>
+  ),
+};
+
+// ─── Shader Tuning ─────────────────────────────────────────────────────
+
+// Use the Controls panel to live-tune displacementScale, blurAmount,
+// saturation, aberrationIntensity, and cornerRadius against the "liquid"
+// profile's defaults.
+export const ShaderTuning: Story = {
+  name: "Shader Tuning (liquid glass)",
+  args: {
+    glass: "liquid",
+    children: "Liquid Glass",
+  },
+  render: (args) => (
+    <div style={glassBackground}>
+      <Button {...args} />
     </div>
   ),
 };

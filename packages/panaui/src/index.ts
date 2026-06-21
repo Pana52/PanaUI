@@ -11,3 +11,10 @@ export type { Theme, ThemeContextValue, ThemeProviderProps } from "./contexts/Th
 // Utilities
 export { Rotate3D } from "./utilities/Rotate3D";
 export type { Rotate3DProps } from "./utilities/Rotate3D";
+
+export { useLiquidGlassShader, GlassFilterDefs } from "./utilities/LiquidGlassFilter";
+export type {
+  UseLiquidGlassShaderOptions,
+  UseLiquidGlassShaderResult,
+  GlassFilterDefsProps,
+} from "./utilities/LiquidGlassFilter";

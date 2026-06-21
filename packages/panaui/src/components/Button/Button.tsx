@@ -1,15 +1,22 @@
 import { cva, type VariantProps } from "class-variance-authority";
 import { twMerge } from "tailwind-merge";
-import { forwardRef, type ButtonHTMLAttributes, type CSSProperties, type ReactNode } from "react";
+import {
+  forwardRef,
+  type ButtonHTMLAttributes,
+  type CSSProperties,
+  type MutableRefObject,
+  type ReactNode,
+} from "react";
 import type { GlassProfile, GlassProfileName } from "@panaui/tokens";
 import { getGlassProfile, colors } from "@panaui/tokens";
 import { useTheme } from "../../contexts/ThemeContext";
+import { useLiquidGlassShader } from "../../utilities/LiquidGlassFilter";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 export type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
 export type ButtonSize = "sm" | "md" | "lg";
-export type BorderWidth = "1px" | "2px" | "3px";
+export type BorderWidth = "1px" | "2px" | "3px" | "5px" | "8px";
 export type { GlassProfileName };
 
 export interface ButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, "disabled"> {
@@ -30,6 +37,19 @@ export interface ButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement
    * from `variant` still applies.
    */
   glassProfile?: GlassProfile;
+  /**
+   * Edge-bulge displacement strength for the liquid-glass shader, in SVG
+   * filter scale units. Overrides the resolved glass profile's value.
+   */
+  displacementScale?: number;
+  /** Backdrop blur, in px. Overrides the resolved glass profile's value. */
+  blurAmount?: number;
+  /** Backdrop saturation percentage — 100 = unchanged. Overrides the resolved glass profile's value. */
+  saturation?: number;
+  /** Chromatic aberration intensity at the glass edges. 0 disables it. Overrides the resolved glass profile's value. */
+  aberrationIntensity?: number;
+  /** Corner radius in px — shapes both the visual rounding and the displacement bulge. Overrides the resolved glass profile's value. */
+  cornerRadius?: number;
   /**
    * Border width for the button. Affects both solid and glass variants.
    * Default: "1px"
@@ -64,22 +84,13 @@ function getSemanticBorderColor(variant?: ButtonVariant): string | undefined {
   }
 }
 
-function glassProfileToStyle(
+/** Border + shadow + transition for the button shell. Backdrop-filter/fill live on the inner backdrop layer instead, so text/icons stay sharp. */
+function glassProfileToShellStyle(
   profile: GlassProfile,
   borderWidth?: string,
   variant?: ButtonVariant
 ): CSSProperties {
-  const { backdrop, surface, border, shadow, motion } = profile;
-
-  const backdropFilter = [
-    `blur(${backdrop.blur})`,
-    `saturate(${backdrop.saturate})`,
-    `brightness(${backdrop.brightness})`,
-    backdrop.hueRotate ? `hue-rotate(${backdrop.hueRotate})` : null,
-    backdrop.contrast != null ? `contrast(${backdrop.contrast})` : null,
-  ]
-    .filter(Boolean)
-    .join(" ");
+  const { border, shadow, motion } = profile;
 
   // Composite box shadow with double border (inner border as inset shadow layer)
   const innerBorderWidth = border.innerWidth || borderWidth || border.width;
@@ -96,12 +107,16 @@ function glassProfileToStyle(
   const finalBorderColor = semanticBorderColor || border.color;
 
   return {
-    backdropFilter,
-    WebkitBackdropFilter: backdropFilter,
-    background: surface.gradient || surface.fillColor,
     borderColor: finalBorderColor,
     boxShadow,
     transitionDuration: motion.transitionDuration,
+  };
+}
+
+/** Translucent fill for the backdrop layer (the part that gets blurred/displaced). */
+function glassProfileToBackdropFillStyle(profile: GlassProfile): CSSProperties {
+  return {
+    background: profile.surface.gradient || profile.surface.fillColor,
   };
 }
 
@@ -110,7 +125,7 @@ function glassProfileToStyle(
 const buttonVariants = cva(
   // Base
   [
-    "inline-flex items-center justify-center gap-2 font-medium select-none",
+    "relative inline-flex items-center justify-center gap-2 font-medium select-none",
     "transition-colors duration-150 cursor-pointer",
     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2",
     "disabled:grayscale disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none",
@@ -142,36 +157,29 @@ const buttonVariants = cva(
         ],
       },
       // ── Glass material structure (orthogonal to variant) ────────────────
-      // Structural backdrop/shadow classes only. Semantic fill + text colors
-      // are applied via compoundVariants below.
+      // Structural overflow/shadow classes only. backdrop-filter now lives on
+      // the inner backdrop layer (see glassBackdropVariants below), since the
+      // SVG displacement filter must not affect text/icons.
       glass: {
         frosted: [
-          "backdrop-blur-[12px] backdrop-saturate-[1.8] backdrop-brightness-[1.1]",
-          "border shadow-[0_4px_16px_rgba(0,0,0,0.18),inset_0_1px_0_rgba(255,255,255,0.40)]",
-          "transition-all motion-reduce:transition-none motion-reduce:backdrop-blur-[2px]",
-          "forced-colors:backdrop-filter-none forced-colors:bg-[ButtonFace]",
-          "forced-colors:text-[ButtonText] forced-colors:border-[ButtonBorder]",
+          "overflow-hidden border shadow-[0_4px_16px_rgba(0,0,0,0.18),inset_0_1px_0_rgba(255,255,255,0.40)]",
+          "transition-all motion-reduce:transition-none",
+          "forced-colors:bg-[ButtonFace] forced-colors:text-[ButtonText] forced-colors:border-[ButtonBorder]",
         ],
         liquid: [
-          "backdrop-blur-[20px] backdrop-saturate-[2.2] backdrop-brightness-[1.15]",
-          "border shadow-[0_8px_32px_rgba(0,0,0,0.16),0_2px_8px_rgba(0,0,0,0.08),inset_0_1px_0_rgba(255,255,255,0.50)]",
-          "transition-all motion-reduce:transition-none motion-reduce:backdrop-blur-[2px]",
-          "forced-colors:backdrop-filter-none forced-colors:bg-[ButtonFace]",
-          "forced-colors:text-[ButtonText] forced-colors:border-[ButtonBorder]",
+          "overflow-hidden border shadow-[0_8px_32px_rgba(0,0,0,0.16),0_2px_8px_rgba(0,0,0,0.08),inset_0_1px_0_rgba(255,255,255,0.50)]",
+          "transition-all motion-reduce:transition-none",
+          "forced-colors:bg-[ButtonFace] forced-colors:text-[ButtonText] forced-colors:border-[ButtonBorder]",
         ],
         tinted: [
-          "backdrop-blur-[12px] backdrop-saturate-[1.6] backdrop-brightness-[1.05]",
-          "border shadow-[0_2px_12px_rgba(0,0,0,0.10),inset_0_1px_0_rgba(255,255,255,0.35)]",
-          "transition-all motion-reduce:transition-none motion-reduce:backdrop-blur-[2px]",
-          "forced-colors:backdrop-filter-none forced-colors:bg-[ButtonFace]",
-          "forced-colors:text-[ButtonText] forced-colors:border-[ButtonBorder]",
+          "overflow-hidden border shadow-[0_2px_12px_rgba(0,0,0,0.10),inset_0_1px_0_rgba(255,255,255,0.35)]",
+          "transition-all motion-reduce:transition-none",
+          "forced-colors:bg-[ButtonFace] forced-colors:text-[ButtonText] forced-colors:border-[ButtonBorder]",
         ],
         clear: [
-          "backdrop-blur-[5px] backdrop-saturate-[1.2] backdrop-brightness-[1.02]",
-          "border shadow-[0_2px_8px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.25)]",
-          "transition-all motion-reduce:transition-none motion-reduce:backdrop-blur-[0px]",
-          "forced-colors:backdrop-filter-none forced-colors:bg-[ButtonFace]",
-          "forced-colors:text-[ButtonText] forced-colors:border-[ButtonBorder]",
+          "overflow-hidden border shadow-[0_2px_8px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.25)]",
+          "transition-all motion-reduce:transition-none",
+          "forced-colors:bg-[ButtonFace] forced-colors:text-[ButtonText] forced-colors:border-[ButtonBorder]",
         ],
       },
       size: {
@@ -183,6 +191,8 @@ const buttonVariants = cva(
         "1px": "border",
         "2px": "border-2",
         "3px": "border-[3px]",
+        "5px": "border-[5px]",
+        "8px": "border-[8px]",
       },
       fullWidth: {
         true: "w-full",
@@ -349,6 +359,11 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps & ButtonVariantP
       size,
       glass,
       glassProfile,
+      displacementScale,
+      blurAmount,
+      saturation,
+      aberrationIntensity,
+      cornerRadius,
       borderWidth = "1px",
       loading = false,
       fullWidth = false,
@@ -360,7 +375,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps & ButtonVariantP
       children,
       ...props
     },
-    ref
+    forwardedRef
   ) {
     const { theme } = useTheme();
     const isDisabled = disabled || loading;
@@ -369,25 +384,83 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps & ButtonVariantP
     const resolvedProfile =
       glassProfile ||
       (glass ? getGlassProfile(glass, theme === "dark" ? "dark" : "light") : undefined);
-    const glassStyle = resolvedProfile
-      ? glassProfileToStyle(resolvedProfile, borderWidth, variant)
+
+    const resolvedCornerRadius = resolvedProfile
+      ? (cornerRadius ?? resolvedProfile.shader.cornerRadius)
       : undefined;
+
+    const {
+      ref: shaderRef,
+      filterDefs,
+      backdropStyle,
+    } = useLiquidGlassShader({
+      displacementScale: resolvedProfile
+        ? (displacementScale ?? resolvedProfile.shader.displacementScale)
+        : 0,
+      blurAmount: resolvedProfile ? (blurAmount ?? resolvedProfile.shader.blurAmount) : 0,
+      saturation: resolvedProfile ? (saturation ?? resolvedProfile.shader.saturation) : 100,
+      aberrationIntensity: resolvedProfile
+        ? (aberrationIntensity ?? resolvedProfile.shader.aberrationIntensity)
+        : 0,
+      cornerRadius: resolvedCornerRadius ?? 0,
+      disabled: !resolvedProfile,
+    });
+
+    const shellStyle = resolvedProfile
+      ? glassProfileToShellStyle(resolvedProfile, borderWidth, variant)
+      : undefined;
+    const backdropFillStyle = resolvedProfile
+      ? glassProfileToBackdropFillStyle(resolvedProfile)
+      : undefined;
+
+    const radiusStyle: CSSProperties | undefined =
+      resolvedCornerRadius != null ? { borderRadius: `${resolvedCornerRadius}px` } : undefined;
 
     return (
       <button
-        ref={ref}
+        ref={(node) => {
+          (shaderRef as MutableRefObject<HTMLButtonElement | null>).current = node;
+          if (typeof forwardedRef === "function") forwardedRef(node);
+          else if (forwardedRef)
+            (forwardedRef as MutableRefObject<HTMLButtonElement | null>).current = node;
+        }}
         disabled={isDisabled}
         aria-busy={loading || undefined}
         className={twMerge(
           buttonVariants({ variant, size, fullWidth, borderWidth, glass }),
           className
         )}
-        style={glassStyle ? { ...glassStyle, ...style } : style}
+        style={shellStyle ? { ...shellStyle, ...radiusStyle, ...style } : style}
         {...props}
       >
-        {loading ? <Spinner /> : leftIcon ? <span className="inline-flex">{leftIcon}</span> : null}
-        {children}
-        {rightIcon && !loading ? <span className="inline-flex">{rightIcon}</span> : null}
+        {resolvedProfile ? (
+          <>
+            {filterDefs}
+            {/* Blur/displacement only — no fill, so feDisplacementMap has nothing
+                opaque of its own to tear at the edges when it samples outward. */}
+            <span
+              aria-hidden="true"
+              className="panaui-glass-backdrop pointer-events-none absolute inset-0"
+              style={{ ...backdropStyle, ...radiusStyle }}
+            />
+            {/* Tint sits above the backdrop, unfiltered, so it always covers
+                the full surface regardless of how the backdrop gets displaced. */}
+            <span
+              aria-hidden="true"
+              className="panaui-glass-fill pointer-events-none absolute inset-0"
+              style={{ ...backdropFillStyle, ...radiusStyle }}
+            />
+          </>
+        ) : null}
+        <span className="relative z-[1] inline-flex items-center gap-2">
+          {loading ? (
+            <Spinner />
+          ) : leftIcon ? (
+            <span className="inline-flex">{leftIcon}</span>
+          ) : null}
+          {children}
+          {rightIcon && !loading ? <span className="inline-flex">{rightIcon}</span> : null}
+        </span>
       </button>
     );
   }

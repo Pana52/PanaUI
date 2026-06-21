@@ -27,4 +27,23 @@
   backdrop-filter is clipped by any ancestor with:
     overflow: hidden | will-change: transform | filter: <any>
   Glass components must not be placed inside such ancestors.
+
+  ─── Liquid glass backdrop layer ──────────────────────────────────────────────
+
+  The `.panaui-glass-backdrop` span carries the SVG displacement filter and
+  backdrop-filter for glass components (kept separate from content so text/
+  icons stay sharp). `.panaui-glass-fill` carries the profile's translucent
+  tint on its own unfiltered layer — feDisplacementMap shifts sample points
+  near the edges, and a fill baked into the same filtered layer would tear
+  wherever a sample point lands outside that layer's own rendered bounds.
+  Both are inline-styled per instance, so the one thing that needs a global
+  rule is hiding them under forced-colors, matching the forced-colors
+  handling already applied to the component shell itself.
 */
+
+@media (forced-colors: active) {
+  .panaui-glass-backdrop,
+  .panaui-glass-fill {
+    display: none;
+  }
+}
